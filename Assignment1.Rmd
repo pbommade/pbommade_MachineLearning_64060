@@ -1,0 +1,101 @@
+---
+title: "Assignment_1"
+author: "Pavan Chaitanya"
+date: "9/9/2022"
+output: word_document
+ 
+---
+
+#ImportData 
+```{r}
+library(readr)
+food_coded <- read_csv("C:\\Users\\Pavan Chaitanya\\Documents\\ML\\food_coded.csv")
+```
+# viewing the imported file in the R studio
+```{r}
+View(food_coded)
+```
+# printing the descriptive Statistics for quantitative and categorical variables
+ # For quantitative variables 
+  # 1 min function
+```{r}     
+min(food_coded$calories_chicken)
+```  
+  # 2 max function
+```{r}     
+max(food_coded$calories_chicken)
+```        
+  # 3 Mean Function
+```{r}     
+mean(food_coded$indian_food)
+```    
+ # 4 Median Function
+```{r}     
+median(food_coded$ideal_diet_coded)
+ 
+```  
+ # 5 Mode Function
+       # there is no direct function available for mean. We have to group first then perform mean.
+```{r}      
+   food<-table(food_coded$vitamins)
+        sort(food,decreasing = TRUE ) 
+
+```  
+ # For categorial variables
+     # 1 Range Function     
+```{r}     
+        range(food_coded$comfort_food)
+        range(food_coded$food_childhood)
+```  
+     # 2 Summary Function 
+```{r}     
+        summary(food_coded)
+```  
+
+
+# Tranformation of variables.
+  # printing the original Healthy feeling Values      
+```{r}     
+      print(food_coded$healthy_feeling)
+```  
+  # Applying the tranformation(logrithmic)
+```{r}     
+      healthyfealinglog<-log10(food_coded$healthy_feeling)
+```  
+  # printing the Logrithmic Healthy feeling Values         
+```{r}     
+      print(healthyfealinglog)
+```  
+  # printing the original ethnic food Values   
+```{r}     
+      print(food_coded$ethnic_food)
+```  
+  # Applying the tranformation(sqrt)      
+```{r}     
+      sqrt_ethnicfood<-sqrt(food_coded$ethnic_food)
+```  
+  # printing the squared ethnic food Values  
+```{r}     
+    print(sqrt_ethnicfood)
+```  
+
+
+#plotting one quantitave Variable
+  #We will be using histogram to plot the quantitative Variable
+    # plotting the histogram for healthy feeling variable 
+```{r}     
+      hist(food_coded$healthy_feeling, col = 'red',main = 'Original Histogram')
+```  
+    # plotting the histogram for income variable 
+```{r}     
+      hist(food_coded$income, col = 'yellow', main = 'income')
+```  
+
+
+#plotting the Scatter plot
+  #plotting the scatter plot between food_reasons_coded...12 and food_reasons_coded...10
+```{r}     
+      plot(food_coded$comfort_food_reasons_coded...12,food_coded$comfort_food_reasons_coded...10,main = 'Plotting Scatter Plot between the 2 comfort food resons',xlab = 'Food Resaon 12', ylab ='Food Reason 10' )
+```  
+
+

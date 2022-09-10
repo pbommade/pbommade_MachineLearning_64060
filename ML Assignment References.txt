@@ -1,0 +1,21 @@
+Dataset Source
+Reference: 
+https://www.kaggle.com/datasets/borapajo/food-choices?resource=download&select=food_coded.csv
+
+importing dataset in R
+Reference: 
+https://support.rstudio.com/hc/en-us/articles/218611977-Importing-Data-with-the-RStudio-IDE
+
+Descriptive Analysis/Statistics
+References: 
+https://statsandr.com/blog/descriptive-statistics-in-r/
+https://uc-r.github.io/descriptives_categorical
+
+Variable Transformation
+References:
+https://www.youtube.com/watch?v=Gu9CMSIhbMU
+
+Plot Reference: https://www.statmethods.net/graphs/scatterplot.html
+
+Scatter Plot
+References:https://www.youtube.com/watch?v=cGb5iqhf0NU
