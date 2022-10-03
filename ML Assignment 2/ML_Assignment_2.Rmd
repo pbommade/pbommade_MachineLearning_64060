@@ -1,0 +1,141 @@
+---
+title: 'ML Assignment 2 KNN '
+author: "Pavan Chaitanya Bommadevara"
+date: "2022-09-28"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r}
+#Question 1:  
+#Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, #Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and Credit Card #= 1.
+#Perform a k-NN classification with all predictors except ID and ZIP code using k = 1.
+#Remember to transform categorical predictors with more than two categories into dummy #variables first. 
+#Specify the success class as 1 (loan acceptance), and use the default cut-off value of 0.5. How would #this customer be classified?
+#Installing all the packages required and importing the data by using the read.csv function
+library('caret')
+library('ISLR')
+library('dplyr')
+library('class')
+
+Uni_Bank <- read.csv("C:/Users/Pavan Chaitanya/Downloads/UniversalBank.csv", sep = ',' )
+ 
+#Converting the  ID Column and ZIP Column as NULL as specified in the given Question.
+Uni_Bank$ID <- NULL
+Uni_Bank$ZIP.Code <- NULL
+summary(Uni_Bank)
+
+#Tranforming the categorial variable Personal Loan as a factor which can classify the response as yes or no.
+Uni_Bank$Personal.Loan =  as.factor(Uni_Bank$Personal.Loan)
+
+#Firstly, Using the Normalization Method to normalize the data.
+Normalized_Model <- preProcess(Uni_Bank[, -8],method = c("center", "scale"))
+Uni_Bank_normalized <- predict(Normalized_Model,Uni_Bank)
+summary(Uni_Bank_normalized)
+
+
+#Partitiong the data into different sets like testing set and training set 
+Train_index <- createDataPartition(Uni_Bank$Personal.Loan, p = 0.6, list = FALSE)
+train.df = Uni_Bank_normalized[Train_index,]
+validation.df = Uni_Bank_normalized[-Train_index,]
+
+#Performing the Prediction 
+To_Predict = data.frame(Age = 40, Experience = 10, Income = 84, Family = 2,
+                        CCAvg = 2, Education = 1, Mortgage = 0, Securities.Account =
+                          0, CD.Account = 0, Online = 1, CreditCard = 1)
+print(To_Predict)
+To_Predict_Normalized <- predict(Normalized_Model,To_Predict)
+
+Prediction <- knn(train= train.df[,1:7,9:12],
+                  test = To_Predict_Normalized[,1:7,9:12],
+                  cl= train.df$Personal.Loan,
+                  k=1)
+print(Prediction)
+
+
+```
+
+
+```{r}
+#Question 2 
+#What is a choice of k that balances between overfitting and ignoring the predictor information? 
+
+set.seed(123)
+
+Uni_Bankcontrol <- trainControl(method= "repeatedcv", number = 3, repeats = 3)
+searchGrid = expand.grid(k=1:10)
+
+knn.model = train(Personal.Loan~., data = train.df, method = 'knn', tuneGrid = searchGrid,trControl = Uni_Bankcontrol)
+
+knn.model
+
+
+
+#Plotting the graph for the best fit.
+plot(knn.model, type = "b", xlab = "K-Value", ylab = "Accuracy")
+
+
+```
+
+```{r}
+#Question 3
+# Show the confusion matrix for the validation data that results from using the best k
+predictions <- predict(knn.model,validation.df)
+
+confusionMatrix(predictions,validation.df$Personal.Loan)
+
+```
+
+
+```{r}
+#Question 4
+# Consider the following customer: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, #Education_1 = 0, Education_2 = 1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD #Account = 0, Online = 1 and Credit Card = 1. Classify the customer using the best k
+#Classifying the customer using the best K.
+To_Predict_Normalized = data.frame(Age = 40, Experience = 10, Income = 84, Family = 2,CCAvg                                    = 2, Education = 1, Mortgage = 0,Securities.Account =0,                                     CD.Account = 0, Online = 1,CreditCard = 1)
+To_Predict_Normalized = predict(Normalized_Model, To_Predict)
+predict(knn.model, To_Predict_Normalized)
+
+
+```
+
+
+```{r}
+
+#Question 5
+# Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). 
+#Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set with #that of the training and validation sets. Comment on the differences and their reason.
+
+#Partitioning the data into training set, testing set and validation sets.
+
+#Training Set
+train_size = 0.5
+Train_index = createDataPartition(Uni_Bank$Personal.Loan, p = 0.5, list = FALSE)
+train.df = Uni_Bank_normalized[Train_index,]
+
+#Testing Set
+test_size = 0.2
+Test_index = createDataPartition(Uni_Bank$Personal.Loan, p = 0.2, list = FALSE)
+Test.df = Uni_Bank_normalized[Test_index,]
+
+#Validation Set
+valid_size = 0.3
+Validation_index = createDataPartition(Uni_Bank$Personal.Loan, p = 0.3, list = FALSE)
+validation.df = Uni_Bank_normalized[Validation_index,]
+
+# Applying the k-NN method with the chosen K.
+
+Testknn <- knn(train = train.df[,-8], test = Test.df[,-8], cl = train.df[,8], k =3)
+Validationknn <- knn(train = train.df[,-8], test = validation.df[,-8], cl = train.df[,8], k =3)
+Trainknn <- knn(train = train.df[,-8], test = train.df[,-8], cl = train.df[,8], k =3)
+
+# Comparing the confusion matrix of the test set, training set and validation sets
+
+confusionMatrix(Testknn, Test.df[,8])
+confusionMatrix(Trainknn, train.df[,8])
+confusionMatrix(Validationknn, validation.df[,8])
+
+# From the above matrices we can say that the accuracy of the training set is somewhat greater than the accuracy of the test and validation sets.
+```

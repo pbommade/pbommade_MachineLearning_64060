@@ -1,0 +1,5 @@
+References :
+
+1)K Nearest Neighbor (kNN) Algorithm:  https://youtu.be/lDCWX6vCLFA
+2)Implementation of KNN in R : https://youtu.be/Z3OOQD61nLM
+3)Best way to learn kNN Algorithm using R Programming :  https://www.analyticsvidhya.com/blog/2015/08/learning-concept-knn-algorithms-programming/
