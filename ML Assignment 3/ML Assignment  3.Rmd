@@ -1,0 +1,115 @@
+---
+title: "ML Assignment3  Naives Bayes"
+author: "Pavan Chaitanya"
+date: "2022-10-12"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup}
+#Accessing Libraries
+library(caret)
+library(ISLR)
+library(dplyr)
+library(class)
+library(e1071)
+
+
+UniBank = read.csv("C:/Users/Pavan Chaitanya/Downloads/UniversalBank.csv")
+View(UniBank)
+summary(UniBank)
+
+df= UniBank
+#converting variables
+UniBank$Personal.Loan <- factor(UniBank$Personal.Loan)
+UniBank$Online <- factor(UniBank$Online)
+UniBank$CreditCard <- factor(UniBank$CreditCard)
+
+#Question A:
+
+set.seed(64060)
+train.index <- createDataPartition(df$Personal.Loan, p =0.6, list = FALSE)
+train.df = df[train.index,]
+validation.df = df[-train.index,]
+
+
+# Using the ftable() instead of melt() and cast().
+mytable <- xtabs(~ CreditCard + Online + Personal.Loan , data = train.df)
+ftable(mytable)
+```
+
+```{r}
+#Question B:
+
+Probability = (50/(50+477))
+Probability
+
+#0.09487666 is the probability that this customer will accept the loan offer
+
+```
+
+
+```{r}
+#Question C:
+
+#Loan (rows) as a function of Online (columns)
+table(Personal.Loan = train.df$Personal.Loan, Online = train.df$Online)
+
+#Loan (rows) as a function of CC(Credit Card)
+table(Personal.Loan = train.df$Personal.Loan, CreditCard = train.df$CreditCard)
+table(Personal.Loan = train.df$Personal.Loan)
+```
+
+```{r}
+#Question D:
+ 
+#i. P(CC = 1 | Loan = 1) (the proportion of credit card holders among the loan acceptors) 
+Prob1 <- 85/(85+200)
+Prob1
+#ii. P(Online = 1 | Loan = 1)  
+Prob2 <- 174/(174+111)
+Prob2
+#iii. P(Loan = 1) (the proportion of loan acceptors)  
+Prob3 <- 285/(285+2715)
+Prob3
+#iv. P(CC = 1 | Loan = 0)  
+Prob4 <- 784/(784+1931)
+Prob4
+#v. P(Online = 1 | Loan = 0) 
+Prob5 <- 1621/(1621+1094)
+Prob5
+#vi. P(Loan = 0) 
+Prob6 <- 2715/(2715+285)
+Prob6
+```
+
+```{r}
+#Question E :
+
+#P(Loan = 1 | CC = 1, Online = 1).
+
+Probability <- (Prob1*Prob2*Prob3)/((Prob1*Prob2*Prob3)+(Prob4*Prob5*Prob6))
+Probability
+```
+
+```{r}
+#Question F :
+
+# The value derived in  Question B is 0.09487666.The value derived in  Question E is 0.09980052.The only difference between the exact method and the naive-bayes method is the exact method would need the the exact same independent variable classifications to predict,whereas the naive bayes method does not.We can say that the value derived from the Question B is more accurate as we have taken the exact values from the pivot table.
+```
+
+```{r}
+#Question G :
+
+nb.model<-naiveBayes(Personal.Loan~ Online +CreditCard, data=train.df) 
+To_Predict=data.frame(Online= 1, CreditCard= 1) 
+predict(nb.model,To_Predict,type='raw')
+    
+```
+```{r}
+#The value derived from the Question G is 0.1013226.
+#The value derived from the Question E is 0.09980052. 
+#There is a slight difference in both the values.
+```
