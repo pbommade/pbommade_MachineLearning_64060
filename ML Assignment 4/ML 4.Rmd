@@ -1,0 +1,165 @@
+---
+title: "ML Assignment 4"
+author: "Pavan Chaitanya"
+output: word_document
+---
+# Loading Libraries
+```{r}
+
+library(tidyverse)
+library(factoextra)
+library(dplyr)
+library(ggplot2)
+library(hrbrthemes)
+
+```
+Task a:
+
+```{r}
+set.seed(100)
+# Importing the dataset
+Pharmacy <- read.csv("C:/Users/Pavan Chaitanya/Downloads/Pharmaceuticals.csv")
+head(Pharmacy)
+```
+#Cleaning the data and checking for any null values in each of the column
+```{r}
+colSums(is.na(Pharmacy)) #returns the number of null values in each column
+```
+
+```{r}
+# Selecting the numericals variables and  normalizing the dataset.
+rownames(Pharmacy)<- Pharmacy$Symbol
+Pharmaceuticals <- Pharmacy[,c(3:11)]
+
+
+
+#Normalizing the numerical variables 
+Normalized_Pharmaceuticals = scale(Pharmaceuticals)
+
+# Elbow Method on scaled data to determine the value of k
+fviz_nbclust(Normalized_Pharmaceuticals,kmeans,method = "wss")+labs(subtitle="Elbow Method")
+
+# Silhouette Method on scaled data to determine the number of clusters
+fviz_nbclust(Normalized_Pharmaceuticals,kmeans,method = "silhouette")+labs(subtitle="Silhouette Method")
+
+
+```
+
+
+The distribution of data points on the scale is depending on the weight of each variable, and this has an impact on the clusters. The spacing between the data points will be affected as a result, and the clusters will follow.
+
+ WSS:
+ At k = 2, the plot resembles an arm with a distinct elbow; however, because of the decision uncertainty, we might also choose 2,3,4,5, and the graph is not sharp and clear.
+ 
+ Silhouette
+ We can clearly see a peak at k = 5 in the graph above that was produced using the silhouette method. So, take into account the silhouette strategy.
+ 
+
+```{r}
+#Silhouette:
+Sil_k5 = kmeans(Normalized_Pharmaceuticals, centers=5,nstart=50)
+
+fviz_cluster(Sil_k5,data=Normalized_Pharmaceuticals)
+
+Silhouette_group=Sil_k5$cluster
+Sil_k5$withinss
+Sil_k5$tot.withinss
+
+#WSS
+Elb_k2 = kmeans(Normalized_Pharmaceuticals, centers=2,nstart=50)
+
+fviz_cluster(Elb_k2,data=Normalized_Pharmaceuticals)
+
+Elb_k2$withinss
+Elb_k2$tot.withinss
+
+```
+The total sum of squares within the cluster for Silhouette method is 62.35 which is smaller than WSS method 11.56.
+
+The best value is k=5(Silhouette)
+
+Task b:
+```{r}
+
+Silhouette_group = as.data.frame(Silhouette_group)
+
+Sil_Pharmaceuticals=cbind(Pharmaceuticals,Silhouette_group)
+
+Cluster_mean= Sil_Pharmaceuticals %>% group_by(Silhouette_group) %>% summarise_all("mean")
+Cluster_mean
+
+```
+
+
+
+Cluster 1
+
+This cluster's companies are less indebted than those in other clusters because it has lower leverage than those other clusters.
+
+This cluster has the lowest revenue growth of all the groups, but the businesses in it have the highest net profit margins.
+
+When the other factors are taken into account, this cluster's businesses are performing better than Clusters 2, 3, and 5.
+
+Cluster 2 
+
+This cluster has a greater mean beta value than other clusters. This shows that the stock prices of the companies in this cluster are more erratic.
+This cluster has the highest mean leverage, indicating that the debt levels of these businesses are higher.
+The companies in this cluster have less Market Capital, ROA, Revenue Growth, and Net Profit Margin. This indicates that these companies need to develop financially.
+
+Cluster 3
+
+The businesses in this cluster have the lowest net profit margins. Furthermore, this cluster has the lowest Return on Equity (ROE), a sign that the businesses in it have a hard time turning equity investments into profits.
+Additionally, this cluster has the highest Price-Earnings Ratio, which indicates that the companies are not profitable.
+Because this cluster has the lowest beta value, even though these companies' profits are declining, we can still see that their stocks are less volatile.
+
+Cluster 4 
+
+The market capitalization, net profit margin, return on assets (ROA), return on equity (ROE), and asset turnover of the companies in this cluster are all at their highest levels.
+The businesses in this cluster have the lowest mean leverage values, which means that their debt to shareholders' equity ratios are lower.
+As a result, this cluster has the highest performing firms when compared to other clusters.
+
+Cluster 5 
+
+High revenue growth among the businesses in this cluster is an indication that business development is going as planned.
+The companies should, ideally, use their assets to boost revenue, which raises the asset turnover ratio. The asset turnover ratio for this cluster is the lowest, nevertheless.
+The fact that this group of businesses has the lowest price-to-earnings ratio suggests that their earnings are higher.
+
+Task c:
+
+```{r}
+
+
+
+Pharma_categorical= Pharmacy[,12:14]
+
+Cluster_Pharma_categorial = cbind(Pharma_categorical,Silhouette_group)
+
+ggplot(Cluster_Pharma_categorial, aes(x = Silhouette_group, fill = Median_Recommendation)) +
+    geom_bar(position = "dodge") + labs(title = "Median_Recommendation vs Cluster", x = "Cluster") + theme_bw()
+
+# Looking at the median recommendation plot, I can see that Cluster 1 only has one "Strong Buy" recommendation and has a lot of "Hold" recommendations. All of the clusters have a distribution of moderate buy.
+
+
+ggplot(Cluster_Pharma_categorial, aes(x = Silhouette_group, fill = Location)) +
+    geom_bar(position = "dodge") + labs(title = "Location vs Cluster", x = "Cluster") +theme_bw()
+
+# I can see that all of the clusters have US-based enterprises from the Location vs. Cluster Plot. However, different places can be found throughout all clusters.
+
+```
+
+Task d :
+
+
+Cluster names:
+
+Cluster 1 -  Enlarging Companies 
+
+Cluster 2 -  Massive debt Companies
+
+Cluster 3 - Little-profit Companies
+
+Cluster 4 -  Most efficient Companies
+
+Cluster 5 -  Increased Income Companies
+
+
