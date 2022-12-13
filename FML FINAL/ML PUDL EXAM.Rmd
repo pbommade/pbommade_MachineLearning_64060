@@ -1,0 +1,218 @@
+---
+title: "ML Final Project"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+# Loading the necessary Libraries for project
+
+```{r}
+library(dplyr)
+library(caret)
+library(missForest)
+library(corrplot)
+library(factoextra)
+library(cluster)
+```
+
+# Reading the CSV File
+
+```{r}
+# reading file
+Fuel_Receipts_Costs_Data=read.csv("C:/Users/Pavan Chaitanya/Downloads/fuel_receipts_costs_eia923 (1).csv")
+
+# head part of file
+head(Fuel_Receipts_Costs_Data,5)
+
+#Checiking NA's
+colMeans(is.na(Fuel_Receipts_Costs_Data))
+
+```
+
+# Data Cleaning and Removing the Unnecessary Colums that are present in dataset
+
+```{r}
+# Randonmly Assigning the seed value
+set.seed(2875)
+
+#checking the NA Values
+Fuel_Receipts_Costs_Data[Fuel_Receipts_Costs_Data==""] = NA
+
+#Converting the mean values to the percentage
+Filtering_NA  = Fuel_Receipts_Costs_Data[,(colMeans(is.na(Fuel_Receipts_Costs_Data))*100)<50]
+
+#Sampling the 2 % of the data 
+Creating_Two_data_Partition = createDataPartition(Filtering_NA$plant_id_eia,p=0.02,list = FALSE)
+Creating_Two_data_Partition1 = Filtering_NA[Creating_Two_data_Partition,]
+# Printing the 2% data
+head(Creating_Two_data_Partition1,10)
+
+colMeans(is.na(Creating_Two_data_Partition1))*100
+
+#converting the date to date format
+Creating_Two_data_Partition1$report_date <- as.Date(Creating_Two_data_Partition1$report_date)
+
+Creating_Two_data_Partition1$report_date <- as.numeric(format(Creating_Two_data_Partition1$report_date, "%Y"))
+
+# removing the unnecessary Colums
+Creating_Two_data_Partition1=Creating_Two_data_Partition1[,-c(6,8,17)]
+
+# Printing the data data frame after removing unnecessary columns
+head(Creating_Two_data_Partition1,10)
+
+```
+
+# Data Imputation
+
+```{r}
+# Converting the variables of char to factor type for data impuataion 
+Creating_Two_data_Partition1$report_date = as.factor(Creating_Two_data_Partition1$report_date)
+
+Creating_Two_data_Partition1$contract_type_code = as.factor(Creating_Two_data_Partition1$contract_type_code)
+
+Creating_Two_data_Partition1$energy_source_code = as.factor(Creating_Two_data_Partition1$energy_source_code)
+
+Creating_Two_data_Partition1$fuel_group_code = as.factor(Creating_Two_data_Partition1$fuel_group_code)
+
+Creating_Two_data_Partition1$primary_transportation_mode_code = as.factor(Creating_Two_data_Partition1$primary_transportation_mode_code)
+
+Creating_Two_data_Partition1$natural_gas_transport_code = as.factor(Creating_Two_data_Partition1$natural_gas_transport_code)
+
+# Computing the Data Imputation
+Genertated_Data = missForest(Creating_Two_data_Partition1)
+
+#Taking only the ximp data frame 
+Imputed = Genertated_Data$ximp
+
+#Printing the data frame after computation of the missing values
+head(Imputed,10)
+
+
+
+```
+
+# Partitioning the  2 % data into 75 % training data.  
+```{r}
+
+Data_Partition = createDataPartition(Imputed$plant_id_eia,p=0.75,list = FALSE)
+
+Data_Partition_Trained = Imputed[Data_Partition,]
+
+Data_Partition_Tested = Imputed[-Data_Partition,]
+
+```
+
+# As data has Outliers we are making sure that the outlier are removed.
+
+```{r}
+# For the fuel received units performing the quartile ranges and IQR  
+Quartiled_data = quantile(Data_Partition_Trained$fuel_received_units, probs=c(.25, .75), na.rm = FALSE)
+Data_Partition_Quartiled = IQR(Data_Partition_Trained$fuel_received_units)
+
+
+Fuelunits_Lower = Quartiled_data[1] - 1.5*Data_Partition_Quartiled
+Fuelunits_Upper = Quartiled_data[2] + 1.5*Data_Partition_Quartiled 
+ 
+Data_With_No_Outliers = subset(Data_Partition_Trained, Data_Partition_Trained$fuel_received_units > Fuelunits_Lower & Data_Partition_Trained$fuel_received_units < Fuelunits_Upper)
+
+# For the fuel cost per mmbtu performing the quartile ranges and IQR
+Range_of_Fuel = quantile(Data_With_No_Outliers$fuel_cost_per_mmbtu, probs=c(.25, .75), na.rm = FALSE)
+Fuelcost_IQR <- IQR(Data_With_No_Outliers$fuel_cost_per_mmbtu)
+ 
+Fuelcost_Lower = Range_of_Fuel[1] - 1.5*Fuelcost_IQR
+Fuelcost_Upper = Range_of_Fuel[2] + 1.5*Fuelcost_IQR 
+ 
+No_Outlier_Data = subset(Data_With_No_Outliers, Data_With_No_Outliers$fuel_cost_per_mmbtu > Fuelcost_Lower & Data_With_No_Outliers$fuel_cost_per_mmbtu < Fuelcost_Upper)
+
+```
+# Choosing and Normalising the  selected variables
+
+```{r}
+
+All_Numeric_Variables=No_Outlier_Data[,c(7,8,9,10,11,12)]
+head(All_Numeric_Variables,12)
+
+Scaled_Data = scale(All_Numeric_Variables)
+head(Scaled_Data,12)
+
+```
+
+# K-Means Clustering 
+
+```{r}
+#wss
+fviz_nbclust(Scaled_Data, kmeans, method = "wss")
+# We feel that k=2 is best.
+wss_k2 = kmeans(Scaled_Data, centers=2,nstart=50)
+wss_group=wss_k2$cluster
+wss_k2$withinss
+wss_k2$tot.withinss
+
+
+fviz_nbclust(Scaled_Data, kmeans, method = "silhouette")
+# Silhouette shows that k=3 is best.
+Sil_k3 = kmeans(Scaled_Data, centers=3,nstart=50)
+Silhouette_group=Sil_k3$cluster
+Sil_k3$withinss
+Sil_k3$tot.withinss
+
+# By comparing the both methods  and by finding the withiness we have come to an idea that k=3 is the best k for our project. 
+# ie Sil_k3$tot.withinss is less that of Wss_k2$tot.withinss
+# 2101.58 is less than 25135.54
+
+fviz_cluster(Sil_k3,data=Scaled_Data)
+
+```
+Interpretation
+```{r}
+Silhouette_group = as.data.frame(Silhouette_group)
+Sil_bind=cbind(All_Numeric_Variables,Silhouette_group)
+Cluster_mean= Sil_bind %>% group_by(Silhouette_group) %>%
+summarise_all("mean")
+Cluster_mean
+
+# 
+# As Sulfer content,ash content,mercury content are less than 0.001 m they can be neglected for intrepretation.
+# Cluster  1
+# 
+#  The power plants present in this cluster recieves fuel of 18049.93 which is low compared to other plants.
+#  As they are receiving low fuel their heat content in fuel(fuel_mmbtu) is also low (1.183889).
+#  The fuel cost per mmbtu is higher(4.889421) than all the 3 clusters formed.
+#  This Cluster is not a preferred one to recommend for Us Government because of fuel cost per mmbtu.
+# 
+# Cluster 2
+#  
+#   The power Plants present in this cluster receives fuel of 29500.21 which is slightly above the Cluster 3 but not cluster 1.
+#   Their heat content in the fuel is very very high of 21.607668 comapared to all the 3 clsuters.
+#   The fuel cost per mmbtu is lower(2.635552) than all the 3 clusters formed.
+#   This cluster is also not a preferred one to recommend for us Government because of fuel mmbtu per unit.
+#   
+# Cluster 3
+#  
+# 	The power Plants present in this cluster receives fuel of 161115.82 which is high than all the 3 clsuters.
+# 	Their heat content in the fuel is 5.231477 which is very good wrt to the fuel recieves compared to other 2 clsuters.
+# 	The fuel cost per mmbtu is also very good(3.704139) wrt to fuel recieved and the heat content.
+# 	This Cluster is the preferred one to recommend for the Us Government beacuse by looking all the factors like (fuel recieved,heat content,fuel cost per mmbtu).
+```
+
+
+# Hierarchial Clustering for visualizing the data 
+ 
+```{r}
+# Getting distance
+distance= dist(Scaled_Data,method="euclidean")
+# Computing method
+hclust_ward=hclust(distance,method = "ward.D2")
+#plotting 
+plot(hclust_ward,cex=0.6,hang=-1); 
+rect.hclust(hclust_ward,k=3,border=1:4)
+
+```
+
+
+
+
+
+
